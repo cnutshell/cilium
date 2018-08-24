@@ -49,6 +49,8 @@ var _ = Describe("K8sUpdates", func() {
 		kubectl.Exec(fmt.Sprintf(
 			"%s delete --all pods,svc,cnp -n %s", helpers.KubectlCmd, helpers.DefaultNamespace))
 
+		kubectl.DeleteETCDOperator()
+
 		ExpectAllPodsTerminated(kubectl)
 	})
 
@@ -60,11 +62,14 @@ var _ = Describe("K8sUpdates", func() {
 	AfterAll(func() {
 		_ = kubectl.Apply(helpers.DNSDeployment())
 
+		// Deploy the etcd operator as it was removed by the delete --all
+		err := kubectl.DeployETCDOperator()
+		Expect(err).To(BeNil(), "Unable to deploy etcd operator")
+
 		// Re-install the cilium developer image after tests are completed
-		err := kubectl.CiliumInstall(helpers.CiliumDefaultDSPatch, helpers.CiliumConfigMapPatch)
+		err = kubectl.CiliumInstall(helpers.CiliumDefaultDSPatch, helpers.CiliumConfigMapPatch)
 		Expect(err).To(BeNil(), "Cilium cannot be installed")
 
-		ExpectCiliumReady(kubectl)
 		ExpectCiliumReady(kubectl)
 	})
 
@@ -144,6 +149,8 @@ func ValidateCiliumUpgrades(kubectl *helpers.Kubectl, oldVersion, newVersion str
 
 		_ = kubectl.DeleteResource(
 			"ds", fmt.Sprintf("-n %s cilium", helpers.KubeSystemNamespace))
+
+		kubectl.DeleteETCDOperator()
 	}
 
 	testfunc := func() {
@@ -191,6 +198,10 @@ func ValidateCiliumUpgrades(kubectl *helpers.Kubectl, oldVersion, newVersion str
 
 		By("Installing kube-dns")
 		kubectl.Apply(helpers.DNSDeployment()).ExpectSuccess("Kube-dns cannot be installed")
+
+		// Deploy the etcd operator as it was removed by the delete --all
+		err = kubectl.DeployETCDOperator()
+		Expect(err).To(BeNil(), "Unable to deploy etcd operator")
 
 		By("Creating some endpoints and L7 policy")
 		kubectl.Apply(demoPath).ExpectSuccess()
