@@ -647,7 +647,7 @@ func (e *Endpoint) regenerateBPF(owner Owner, epdir, reason string) (uint64, boo
 	}()
 
 	if e.PolicyMap == nil {
-		e.PolicyMap, createdPolicyMap, err = policymap.OpenMap(e.PolicyMapPathLocked())
+		e.PolicyMap, _, err = policymap.OpenMap(e.PolicyMapPathLocked())
 		if err != nil {
 			e.Mutex.Unlock()
 			return 0, compilationExecuted, err
@@ -659,6 +659,10 @@ func (e *Endpoint) regenerateBPF(owner Owner, epdir, reason string) (uint64, boo
 			e.Mutex.Unlock()
 			return 0, compilationExecuted, err
 		}
+
+		// Also reset the in-memory state of the realized state as the
+		// BPF map content is guaranteed to be empty right now.
+		e.realizedMapState = make(map[policymap.PolicyKey]struct{})
 	}
 
 	// Only generate & populate policy map if a security identity is set up for
