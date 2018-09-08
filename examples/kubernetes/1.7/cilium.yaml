@@ -26,8 +26,12 @@ data:
   debug: "false"
   disable-ipv4: "false"
   sidecar-http-proxy: "false"
-  # If you want to clean cilium state; change this value to true
+  # If you want to clean cilium state; change this value to true.
+  # This may disrupt IP connectivity for existing pods.
   clean-cilium-state: "false"
+  # If you want to clean cilium BPF state; change this value to true
+  # Connectivity for existing pods should be restored after start.
+  clean-cilium-bpf-state: "false"
 ---
 # The etcd secrets can be populated in kubernetes.
 # For more information see: https://kubernetes.io/docs/concepts/configuration/secret
@@ -81,7 +85,7 @@ spec:
       - name: clean-cilium-state
         image: docker.io/library/busybox:1.28.4
         imagePullPolicy: IfNotPresent
-        command: ['sh', '-c', 'if [ "${CLEAN_CILIUM_STATE}" = "true" ]; then rm -rf /var/run/cilium/state; rm -rf /sys/fs/bpf/tc/globals/cilium_*; fi']
+        command: ['sh', '-c', 'if [ "${CLEAN_CILIUM_STATE}" = "true" ]; then rm -rf /var/run/cilium/state; fi; if [ "${CLEAN_CILIUM_STATE}" = "true" ] || [ "${CLEAN_CILIUM_BPF_STATE}" = "true" ]; then rm -rf /sys/fs/bpf/tc/globals/cilium_* /var/run/cilium/bpffs/tc/globals/cilium_*; fi']
         securityContext:
           capabilities:
             add:
@@ -99,6 +103,12 @@ spec:
                 name: cilium-config
                 optional: true
                 key: clean-cilium-state
+          - name: "CLEAN_CILIUM_BPF_STATE"
+            valueFrom:
+              configMapKeyRef:
+                name: cilium-config
+                optional: true
+                key: clean-cilium-bpf-state
       containers:
       - image: docker.io/cilium/cilium:v1.0.5
         imagePullPolicy: IfNotPresent

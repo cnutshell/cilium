@@ -26,8 +26,12 @@ data:
   debug: "false"
   disable-ipv4: "false"
   sidecar-http-proxy: "false"
-  # If you want to clean cilium state; change this value to true
+  # If you want to clean cilium state; change this value to true.
+  # This may disrupt IP connectivity for existing pods.
   clean-cilium-state: "false"
+  # If you want to clean cilium BPF state; change this value to true
+  # Connectivity for existing pods should be restored after start.
+  clean-cilium-bpf-state: "false"
 ---
 # The etcd secrets can be populated in kubernetes.
 # For more information see: https://kubernetes.io/docs/concepts/configuration/secret
