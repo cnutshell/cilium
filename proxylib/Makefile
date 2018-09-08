@@ -6,6 +6,7 @@ DEPS := $(shell find ../pkg accesslog npds test . \( -name '*.go' ! -name '*_tes
 $(TARGET): $(DEPS)
 	@$(ECHO_GO)
 	$(GO) build $(GOBUILD) -o $@ -buildmode=c-shared
+	ls -l libcilium.so
 
 all: $(TARGET)
 
